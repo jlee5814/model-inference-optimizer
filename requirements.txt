@@ -1,0 +1,21 @@
+# Core ML Frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+onnx>=1.14.0
+onnxruntime>=1.15.0
+onnxruntime-gpu>=1.15.0  # Optional: for GPU support
+
+# TensorRT (optional - requires NVIDIA GPU)
+# nvidia-tensorrt>=8.6.0  # Uncomment if you have NVIDIA GPU
+
+# Benchmarking and Visualization
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pandas>=2.0.0
+tqdm>=4.65.0
+
+# Utilities
+pillow>=9.5.0
+pyyaml>=6.0
+tabulate>=0.9.0

@@ -1,0 +1,36 @@
+# Model Inference Optimizer Configuration
+
+# Model settings
+model:
+  name: "resnet50"
+  pretrained: true
+  input_shape: [1, 3, 224, 224]  # [batch, channels, height, width]
+
+# Benchmark settings
+benchmark:
+  warmup_iterations: 10
+  benchmark_iterations: 100
+  batch_sizes: [1, 4, 8, 16]  # Different batch sizes to test
+  device: "cuda"  # Options: "cuda", "cpu"
+
+# Optimization settings
+optimization:
+  enable_torchscript: true
+  enable_onnx: true
+  enable_tensorrt: false  # Set to true if you have NVIDIA GPU with TensorRT
+
+  # ONNX settings
+  onnx:
+    opset_version: 14
+    optimize_graph: true
+
+  # TensorRT settings (if enabled)
+  tensorrt:
+    fp16_mode: true
+    max_workspace_size: 1073741824  # 1GB in bytes
+
+# Output settings
+output:
+  models_dir: "models"
+  results_dir: "results"
+  save_graphs: true
