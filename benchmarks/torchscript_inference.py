@@ -3,13 +3,12 @@ TorchScript Inference
 Optimized PyTorch inference using TorchScript (JIT compilation)
 """
 
+import os
 import torch
-import torchvision.models as models
 import time
 import numpy as np
 from typing import Tuple, Dict
-import os
-
+from ultralytics import YOLO
 
 class TorchScriptInference:
     """TorchScript optimized inference engine"""
@@ -27,49 +26,26 @@ class TorchScriptInference:
         self.model = None
         self.scripted_model = None
 
-    def convert_to_torchscript(self, pretrained: bool = True, save_path: str = None):
+    def convert_to_torchscript(self, pretrained=True, save_path="models/torchscript_model.pt"):
         """
-        Convert PyTorch model to TorchScript
-
-        Args:
-            pretrained: Whether to use pretrained weights
-            save_path: Path to save the TorchScript model
+        Convert YOLOv8 model to TorchScript format using Ultralytics exporter.
         """
-        print(f"Converting {self.model_name} to TorchScript...")
+        if "yolov8" in self.model_name:
+            print(f"Converting {self.model_name} to TorchScript using Ultralytics export...")
+            yolo = YOLO(f"{self.model_name}.pt")
+            yolo.export(format="torchscript", dynamic=False, simplify=True, imgsz=640)
+            print("✅ YOLOv8 TorchScript model exported successfully.")
 
-        # Load original PyTorch model
-        if self.model_name == "resnet50":
-            model = models.resnet50(pretrained=pretrained)
-        elif self.model_name == "resnet18":
-            model = models.resnet18(pretrained=pretrained)
-        elif self.model_name == "mobilenet_v2":
-            model = models.mobilenet_v2(pretrained=pretrained)
+            # Load the exported TorchScript model back into memory for benchmarking
+            torchscript_path = f"{self.model_name}.torchscript"
+            if not os.path.exists(torchscript_path):
+                torchscript_path = os.path.join(os.getcwd(), torchscript_path)
+
+            self.scripted_model = torch.jit.load(torchscript_path, map_location=self.device)
+            self.scripted_model.eval()
+            print(f"✅ Loaded TorchScript model from {torchscript_path}")
         else:
             raise ValueError(f"Unsupported model: {self.model_name}")
-
-        model.to(self.device)
-        model.eval()
-
-        # Create example input for tracing
-        example_input = torch.randn(1, 3, 224, 224).to(self.device)
-
-        # Convert to TorchScript using trace
-        # Note: We use trace instead of script for better compatibility with complex models
-        with torch.no_grad():
-            self.scripted_model = torch.jit.trace(model, example_input)
-
-        # Optimize the TorchScript model
-        self.scripted_model = torch.jit.optimize_for_inference(self.scripted_model)
-
-        print(f"✓ Model converted to TorchScript")
-
-        # Save if path provided
-        if save_path:
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            torch.jit.save(self.scripted_model, save_path)
-            print(f"✓ TorchScript model saved to {save_path}")
-
-        return self
 
     def load_model(self, model_path: str):
         """Load a pre-converted TorchScript model"""

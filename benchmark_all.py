@@ -68,8 +68,6 @@ class ModelInferenceOptimizer:
             device=device
         )
 
-        inference.load_model(pretrained=self.config['model']['pretrained'])
-
         input_shape = tuple(self.config['model']['input_shape'])
         input_shape = (batch_size, *input_shape[1:])
 

@@ -4,7 +4,7 @@ Standard PyTorch model inference without optimizations
 """
 
 import torch
-import torchvision.models as models
+from ultralytics import YOLO
 import time
 import numpy as np
 from typing import Tuple, Dict
@@ -13,38 +13,17 @@ from typing import Tuple, Dict
 class PyTorchInference:
     """Baseline PyTorch inference engine"""
 
-    def __init__(self, model_name: str = "resnet50", device: str = "cuda"):
+    def __init__(self, model_name: str = "yolov8n", device: str = "cuda"):
         """
-        Initialize PyTorch model
+        Initialize YOLOv8 model
 
         Args:
-            model_name: Name of the torchvision model
+            model_name: Name of the YOLOv8 model
             device: Device to run inference on ('cuda' or 'cpu')
         """
         self.model_name = model_name
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
-        self.model = None
-
-    def load_model(self, pretrained: bool = True):
-        """Load the PyTorch model"""
-        print(f"Loading {self.model_name} model (PyTorch baseline)...")
-
-        # Load pre-trained model
-        if self.model_name == "resnet50":
-            self.model = models.resnet50(pretrained=pretrained)
-        elif self.model_name == "resnet18":
-            self.model = models.resnet18(pretrained=pretrained)
-        elif self.model_name == "mobilenet_v2":
-            self.model = models.mobilenet_v2(pretrained=pretrained)
-        else:
-            raise ValueError(f"Unsupported model: {self.model_name}")
-
-        # Move to device and set to evaluation mode
-        self.model.to(self.device)
-        self.model.eval()
-
-        print(f"✓ Model loaded on {self.device}")
-        return self
+        self.model = YOLO(f"{model_name}.pt").model.to(self.device).eval()
 
     def warmup(self, input_shape: Tuple[int, int, int, int], iterations: int = 10):
         """
@@ -93,7 +72,7 @@ class PyTorchInference:
                 start_time = time.perf_counter()
 
                 # Inference
-                output = self.model(dummy_input)
+                results = self.model(dummy_input)
 
                 # End timing
                 if self.device.type == "cuda":

@@ -38,17 +38,38 @@ class ONNXInference:
         optimize: bool = True
     ):
         """
-        Convert PyTorch model to ONNX format
-
-        Args:
-            pretrained: Whether to use pretrained weights
-            save_path: Path to save the ONNX model
-            opset_version: ONNX opset version
-            optimize: Whether to optimize the ONNX graph
+        Convert YOLOv8 model to ONNX format using Ultralytics exporter.
+        Falls back to torchvision models if YOLOv8 is not detected.
         """
+        import os
+        import onnx
+        from ultralytics import YOLO
+
         print(f"Converting {self.model_name} to ONNX...")
 
-        # Load PyTorch model
+        # YOLOv8 export path
+        if "yolov8" in self.model_name.lower():
+            print(f"Detected YOLOv8 model: {self.model_name}")
+            yolo = YOLO(f"{self.model_name}.pt")
+            yolo.export(format="onnx", dynamic=False, simplify=True, imgsz=640)
+            print("✅ YOLOv8 ONNX model exported successfully.")
+
+            onnx_path = f"{self.model_name}.onnx"
+            if not os.path.exists(onnx_path):
+                onnx_path = os.path.join(os.getcwd(), onnx_path)
+
+            # Load & verify exported model
+            onnx_model = onnx.load(onnx_path)
+            onnx.checker.check_model(onnx_model)
+            print(f"✅ Verified ONNX model: {onnx_path}")
+
+            self.onnx_model_path = onnx_path
+            return onnx_path
+
+        # Fallback: standard torchvision model
+        import torch
+        import torchvision.models as models
+
         if self.model_name == "resnet50":
             model = models.resnet50(pretrained=pretrained)
         elif self.model_name == "resnet18":
@@ -60,13 +81,9 @@ class ONNXInference:
 
         model.eval()
 
-        # Create dummy input
         dummy_input = torch.randn(1, 3, 224, 224)
-
-        # Export to ONNX
         if save_path is None:
             save_path = f"models/{self.model_name}.onnx"
-
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
         torch.onnx.export(
@@ -75,27 +92,16 @@ class ONNXInference:
             save_path,
             export_params=True,
             opset_version=opset_version,
-            do_constant_folding=True,  # Optimize constant folding
+            do_constant_folding=True,
             input_names=['input'],
             output_names=['output'],
-            dynamic_axes={
-                'input': {0: 'batch_size'},  # Variable batch size
-                'output': {0: 'batch_size'}
-            }
+            dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
         )
 
-        print(f"✓ Model exported to ONNX format: {save_path}")
-
-        # Verify the ONNX model
+        print(f"✅ Model exported to ONNX format: {save_path}")
         onnx_model = onnx.load(save_path)
         onnx.checker.check_model(onnx_model)
-        print("✓ ONNX model verified")
-
-        # Optimize the ONNX graph (optional but recommended)
-        if optimize:
-            print("Optimizing ONNX graph...")
-            # Note: onnx.optimizer is deprecated, using basic optimizations via export
-            print("✓ Graph optimizations applied during export")
+        print("✅ ONNX model verified")
 
         return save_path
 
