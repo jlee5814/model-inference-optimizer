@@ -126,4 +126,14 @@ These constraints are intentional to isolate inference-engine effects.
 
 ## Scope Clarification
 
-This project is **no
+This project is not:
+
+- A production inference service
+- A deployment framework
+- A benchmark leaderboard
+
+It is:
+
+- A controlled inference performance study
+- A reference for optimization tradeoffs
+- A systems-oriented ML engineering exercise
