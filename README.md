@@ -1,5 +1,3 @@
-# Model Inference Optimizer
-
 A benchmarking and experimentation suite for understanding **ML model inference performance tradeoffs** across common production optimization paths.
 
 This project measures how the same trained model behaves when moved from **research-friendly execution** to **production-oriented inference engines**, focusing on latency, throughput, and operational constraints rather than model accuracy.
